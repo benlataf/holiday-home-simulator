@@ -1,40 +1,53 @@
 name: Build Windows EXE
 
 on:
+  # Lancement automatique lorsqu'un tag versionné (ex : v1.2.0) est poussé
   push:
-    branches: [ main ]           # lance à chaque push sur main
-  workflow_dispatch:             # ou déclenchement manuel
+    tags: ["v*"]
+  # Déclenchement manuel possible depuis l’onglet « Actions »
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: windows-latest
 
     steps:
-    # 1. Récupère le code
-    - name: Checkout code
-      uses: actions/checkout@v4
+      # 1. Checkout du code
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    # 2. Configure Python 3.10 (ou la version que tu utilises)
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.10"
+      # 2. Configure Python (prends la même version que ta dev locale)
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
 
-    # 3. Installe les dépendances (requirements + PyInstaller)
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pyinstaller
+      # 3. Install des dépendances
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
 
-    # 4. Construit l’exécutable unique, mode GUI
-    - name: Build EXE with PyInstaller
-      run: |
-        pyinstaller --noconfirm --onefile --windowed --name SimulationResidence main.py
+      # 4. Build de l'exécutable avec le numéro de version
+      - name: Build EXE with PyInstaller
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}"          # ex: v1.2.0
+          pyinstaller --noconfirm --onefile --windowed `
+                      --name "SimulationResidence-$version" main.py
+          echo "exe_path=dist/SimulationResidence-$version.exe" >> $env:GITHUB_ENV
 
-    # 5. Charge l’artefact dans l’onglet Actions
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: SimulationResidence.exe
-        path: dist/SimulationResidence.exe
+      # 5. Upload de l'artefact
+      - name: Upload built EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: SimulationResidence-${{ github.ref_name }}.exe
+          path: ${{ env.exe_path }}
+
+      # 6. (Optionnel) Crée une release GitHub et attache l'exécutable
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.exe_path }}
