@@ -51,31 +51,6 @@ Utilisation
 	•	Les cash-flows sont détaillés,
 	•	Un fichier texte est créé dans le dossier courant.
 
-⸻
-
-Compilation d’un exécutable Windows
-
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
-pip install pyinstaller
-pyinstaller --onefile --windowed --name SimulationResidence main.py
-# résultat : dist\SimulationResidence.exe
-
-
-⸻
-
-Intégration continue
-
-Le workflow .github/workflows/build-win.yml :
-	•	se lance sur chaque tag Git v* ;
-	•	construit SimulationResidence-<version>.exe avec PyInstaller ;
-	•	publie l’exécutable comme artefact et l’attache à une Release GitHub.
-
-Créer un tag :
-
-git tag v1.0.0
-git push --tags
 
 
 ⸻
